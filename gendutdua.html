@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gim Interaktif IPAS: Ekosistem di Sekitarku</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Playfair+Display:ital,wght@0,700;1,700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .font-serif { font-family: 'Playfair Display', serif; }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f8f5; }
+        ::-webkit-scrollbar-thumb { background: #10b981; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #059669; }
+
+        .certificate-bg {
+            background-color: #fff9e6;
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23d9a05b' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        }
+
+        .option-btn {
+            transition: all 0.2s ease;
+        }
+        .option-btn:not(:disabled):hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        @media print {
+            body * { visibility: hidden; }
+            #result-screen, #result-screen * { visibility: visible; }
+            #result-screen { position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;}
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body class="bg-emerald-50 text-emerald-900 min-h-screen flex items-center justify-center p-4">
+
+    <!-- Screen 1: Home / Login -->
+    <div id="home-screen" class="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center border-t-8 border-emerald-500">
+        <div class="mb-6 flex justify-center">
+            <svg class="w-24 h-24 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        </div>
+        <h1 class="text-3xl font-extrabold text-gray-800 mb-2">Penjelajah Ekosistem</h1>
+        <p class="text-gray-600 mb-6 text-sm">Gim IPAS Kelas 5 - Tantangan HOTS C5</p>
+        
+        <div class="space-y-4">
+            <div>
+                <label for="playerNameInput" class="block text-left text-sm font-semibold text-gray-700 mb-1">Nama Siswa:</label>
+                <input type="text" id="playerNameInput" placeholder="Masukkan nama lengkapmu..." class="w-full px-4 py-3 rounded-lg border-2 border-emerald-200 focus:border-emerald-500 focus:outline-none transition">
+            </div>
+            <button onclick="startGame()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-lg transition duration-200 shadow-md transform hover:-translate-y-1">
+                Mulai Petualangan
+            </button>
+        </div>
+        <div class="mt-4 text-xs text-red-500 bg-red-50 p-2 rounded hidden" id="name-error">
+            Silakan masukkan nama terlebih dahulu!
+        </div>
+    </div>
+
+    <!-- Screen 2: Game -->
+    <div id="game-screen" class="max-w-4xl w-full bg-white rounded-2xl shadow-xl overflow-hidden hidden flex-col h-[90vh]">
+        <!-- Header -->
+        <div class="bg-emerald-600 text-white p-4 flex justify-between items-center shadow-md shrink-0">
+            <div class="font-bold text-lg" id="display-name">Halo, Siswa</div>
+            <div class="font-bold text-xl bg-emerald-800 px-4 py-1 rounded-full border border-emerald-400">
+                Soal <span id="current-question-num">1</span>/60
+            </div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="w-full bg-gray-200 h-2 shrink-0">
+            <div id="progress-bar" class="bg-yellow-400 h-2 transition-all duration-300" style="width: 0%;"></div>
+        </div>
+
+        <!-- Question Area -->
+        <div class="p-6 md:p-10 flex-grow overflow-y-auto flex flex-col">
+            <div class="bg-emerald-50 border-l-4 border-emerald-500 p-6 rounded-r-lg mb-8 shadow-sm">
+                <h2 id="question-text" class="text-xl md:text-2xl font-semibold text-gray-800 leading-relaxed">
+                    Loading question...
+                </h2>
+            </div>
+
+            <!-- Options -->
+            <div id="options-container" class="grid grid-cols-1 md:grid-cols-2 gap-4 flex-grow content-start">
+                <!-- Buttons injected via JS -->
+            </div>
+        </div>
+
+        <!-- Footer / Action -->
+        <div class="p-4 border-t border-gray-100 bg-gray-50 flex justify-end shrink-0">
+            <button id="next-btn" onclick="nextQuestion()" class="hidden bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-8 rounded-lg transition duration-200 shadow-md">
+                Soal Berikutnya ➔
+            </button>
+        </div>
+    </div>
+
+    <!-- Screen 3: Result / Certificate -->
+    <div id="result-screen" class="max-w-3xl w-full hidden">
+        <div id="certificate-content" class="certificate-bg border-8 border-double border-amber-600 rounded-lg p-10 md:p-16 shadow-2xl relative text-center bg-white">
+            
+            <!-- Corner Decorations -->
+            <div class="absolute top-4 left-4 w-12 h-12 border-t-4 border-l-4 border-amber-600"></div>
+            <div class="absolute top-4 right-4 w-12 h-12 border-t-4 border-r-4 border-amber-600"></div>
+            <div class="absolute bottom-4 left-4 w-12 h-12 border-b-4 border-l-4 border-amber-600"></div>
+            <div class="absolute bottom-4 right-4 w-12 h-12 border-b-4 border-r-4 border-amber-600"></div>
+
+            <div class="mb-6 inline-block">
+                <svg class="w-20 h-20 text-amber-500 mx-auto" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+            </div>
+            
+            <h1 class="text-4xl md:text-5xl font-serif text-amber-800 mb-2 font-bold uppercase tracking-widest">Sertifikat Kelulusan</h1>
+            <p class="text-gray-600 mb-8 uppercase tracking-widest text-sm font-bold">Penjelajah Ekosistem Cilik</p>
+            
+            <p class="text-lg text-gray-700 italic mb-4">Diberikan secara membanggakan kepada:</p>
+            <h2 id="cert-name" class="text-3xl md:text-5xl font-bold text-gray-900 border-b-2 border-gray-300 pb-2 inline-block px-10 mb-6 font-serif">
+                Nama Siswa
+            </h2>
+            
+            <p class="text-md text-gray-700 mb-6 max-w-xl mx-auto leading-relaxed">
+                Telah berhasil menyelesaikan dan mengevaluasi kasus-kasus kompleks (HOTS) terkait Komponen, Interaksi, dan Keseimbangan Ekosistem pada pembelajaran IPAS Kelas 5 Kurikulum Merdeka.
+            </p>
+
+            <div class="bg-amber-100 border border-amber-200 rounded-xl p-6 inline-block mb-8">
+                <p class="text-sm text-amber-800 font-bold uppercase tracking-wider mb-1">Skor Akhir</p>
+                <div class="text-6xl font-black text-amber-600 font-serif" id="cert-score">100</div>
+                <div class="text-xs text-amber-700 mt-2 font-bold" id="cert-predicate">PREDIKAT: SANGAT BAIK</div>
+            </div>
+
+            <div class="flex justify-between items-end mt-4 px-10">
+                <div class="text-center">
+                    <div class="border-b border-gray-400 w-32 mb-2"></div>
+                    <p class="text-xs text-gray-500 font-bold uppercase">Guru IPAS</p>
+                </div>
+                <div class="w-24 h-24 rounded-full border-4 border-amber-500 flex items-center justify-center bg-white shadow-inner transform rotate-12 relative overflow-hidden">
+                    <span class="font-bold text-amber-600 text-[10px] leading-tight text-center relative z-10 bg-white/80 p-1">LULUS<br>EVALUASI<br>HOTS</span>
+                </div>
+                <div class="text-center">
+                    <div id="cert-date" class="border-b border-gray-400 w-32 mb-2 text-sm text-gray-800">Tanggal</div>
+                    <p class="text-xs text-gray-500 font-bold uppercase">Diterbitkan Pada</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mt-8 flex justify-center gap-4 no-print">
+            <button onclick="window.print()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-6 rounded-lg transition duration-200 shadow-md flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                Cetak / Simpan PDF
+            </button>
+            <button onclick="location.reload()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-6 rounded-lg transition duration-200 shadow-md">
+                Main Lagi
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Data 60 Soal HOTS C5 (Mengevaluasi, Menilai, Menyimpulkan, Memilih argumen terbaik)
+        // Dibuat mengecoh agar siswa tidak asal menebak.
+        const questions = [
+            // SUB-TEMA 1: KOMPONEN EKOSISTEM (Abiotik & Biotik) 1-20
+            {
+                q: "Seorang petani mengevaluasi kondisi sawahnya yang sering gagal panen. Ditemukan bahwa cacing tanah sangat sedikit dan tanah menjadi keras. Tindakan paling tepat berdasarkan analisis fungsi komponen ekosistem yang harus diputuskan petani adalah...",
+                o: [
+                    "Menambahkan pupuk kimia dosis tinggi agar tanah langsung mendapat nutrisi buatan.",
+                    "Memberikan pupuk kompos untuk memancing aktivitas organisme pengurai dan memperbaiki struktur tanah.",
+                    "Mengganti tanaman padi dengan palawija karena tanah keras tidak bisa menyerap air dengan baik.",
+                    "Menyemprotkan pestisida agar hama yang membuat tanah keras dapat dimusnahkan segera."
+                ],
+                a: 1
+            },
+            {
+                q: "Di sebuah ekosistem danau, terjadi ledakan populasi enceng gondok menutupi permukaan air. Jika kamu diminta menilai dampak terburuk bagi komponen abiotik dan biotik di bawah permukaan, kesimpulan mana yang paling valid?",
+                o: [
+                    "Suhu air akan meningkat drastis sehingga ikan akan lebih cepat berkembang biak.",
+                    "Oksigen terlarut berkurang karena kurangnya cahaya matahari yang mematikan fitoplankton, menyebabkan ikan mati.",
+                    "Kualitas air membaik karena enceng gondok menyerap polutan, sehingga populasi ikan endemik meningkat.",
+                    "Populasi zooplankton meningkat drastis karena mendapat banyak tempat berlindung dari predator."
+                ],
+                a: 1
+            },
+            {
+                q: "Dalam sebuah akuarium buatan, Dini memasukkan pasir, batu, air, dan ikan hias tanpa tanaman air maupun pompa aerator. Prediksikan dan evaluasi keberlangsungan ekosistem buatan tersebut dalam jangka panjang!",
+                o: [
+                    "Stabil, karena kotoran ikan akan menjadi nutrisi bagi batu dan pasir di dasar akuarium.",
+                    "Tidak stabil, karena komponen abiotik (batu dan pasir) akan menyerap semua air seiring waktu.",
+                    "Tidak stabil, karena tidak ada komponen produsen yang menghasilkan oksigen untuk respirasi ikan.",
+                    "Stabil, karena ikan dapat beradaptasi dengan mengambil oksigen langsung dari pasir."
+                ],
+                a: 2
+            },
+            {
+                q: "Keberadaan dekomposer (pengurai) sering diabaikan. Jika seluruh dekomposer di hutan lindung tiba-tiba mati karena bahan kimia, evaluasilah dampak paling mendasar terhadap siklus materi di hutan tersebut!",
+                o: [
+                    "Pohon-pohon akan tumbuh lebih cepat karena tidak ada mikroba yang merusak akarnya.",
+                    "Hewan karnivora akan kekurangan makanan karena herbivora kehilangan habitat.",
+                    "Sampah organik menumpuk dan siklus unsur hara berhenti, menyebabkan produsen akhirnya mati.",
+                    "Mata air akan mengering karena dekomposer bertugas menyimpan cadangan air tanah."
+                ],
+                a: 2
+            },
+            {
+                q: "Perhatikan komponen berikut: 1) Cahaya matahari, 2) Curah hujan tinggi, 3) Tanah gambut, 4) Kelembapan udara. Jika pemerintah ingin menanam padi varietas kering di lahan dengan ciri di atas, nilai kesesuaian ekosistem tersebut!",
+                o: [
+                    "Sangat sesuai, karena curah hujan tinggi membantu padi kering tumbuh tanpa irigasi tambahan.",
+                    "Tidak sesuai, karena padi varietas kering membutuhkan tanah yang tidak terlalu lembab dan curah hujan rendah.",
+                    "Sesuai, asalkan ditambahkan pupuk urea dalam jumlah besar untuk menetralkan asam pada tanah gambut.",
+                    "Tidak sesuai, karena cahaya matahari di daerah gambut biasanya terhalang oleh curah hujan."
+                ],
+                a: 1
+            },
+            {
+                q: "Manakah argumen yang paling kuat untuk membuktikan bahwa komponen abiotik memengaruhi komponen biotik, bukan sebaliknya, dalam kasus adaptasi kaktus di gurun?",
+                o: [
+                    "Kaktus memiliki duri agar hewan gurun tidak bisa memakannya, sehingga kaktus mengubah ekosistem gurun.",
+                    "Ketersediaan air yang sangat minim (abiotik) memaksa kaktus mengubah daunnya menjadi duri untuk mengurangi penguapan.",
+                    "Akar kaktus yang panjang mampu menciptakan cadangan air baru di bawah tanah gurun.",
+                    "Suhu gurun yang panas diakibatkan oleh penguapan air yang rendah dari kaktus."
+                ],
+                a: 1
+            },
+            {
+                q: "Dua wilayah memiliki curah hujan yang sama, namun wilayah A memiliki banyak pepohonan besar sedangkan wilayah B hanya ditumbuhi semak. Evaluasi perbedaan kemampuan menahan air tanah antara kedua wilayah tersebut!",
+                o: [
+                    "Wilayah B lebih baik karena semak tidak banyak menyerap air tanah dibanding pohon besar.",
+                    "Wilayah A lebih baik karena akar pohon besar dan seresah daun membantu penyerapan air ke dalam tanah secara maksimal.",
+                    "Keduanya sama saja karena faktor penentu air tanah hanyalah jumlah curah hujan abiotik.",
+                    "Wilayah B lebih baik karena air hujan langsung jatuh ke tanah tanpa terhalang daun pohon."
+                ],
+                a: 1
+            },
+            {
+                q: "Sebuah ekosistem padang rumput mengalami musim kemarau panjang yang tidak biasa. Spesies rumput mulai mengering. Nilai strategi bertahan hidup komponen biotik mana yang paling mungkin menjaga keseimbangan sementara?",
+                o: [
+                    "Hewan herbivora bermigrasi ke ekosistem lain untuk mencari sumber makanan yang tersisa.",
+                    "Karnivora mulai memakan rumput kering untuk menggantikan daging herbivora.",
+                    "Tumbuhan rumput berevolusi secara cepat mengubah diri menjadi pohon berkayu.",
+                    "Dekomposer berhenti bekerja agar sisa rumput tidak cepat hancur."
+                ],
+                a: 0
+            },
+            {
+                q: "Dalam evaluasi pembangunan kota, seorang arsitek menyarankan penggunaan aspal porus (tembus air) dibandingkan aspal biasa. Apa justifikasi paling ekologis dari keputusan ini terhadap komponen abiotik tanah?",
+                o: [
+                    "Aspal porus memantulkan cahaya matahari sehingga suhu udara kota menjadi lebih sejuk.",
+                    "Memungkinkan air hujan meresap memulihkan cadangan air tanah dan mencegah penurunan muka tanah.",
+                    "Aspal porus lebih disukai oleh serangga untuk membuat sarang di bawah permukaan jalan.",
+                    "Mencegah akar pohon merusak jalan raya karena aspal porus fleksibel mengikuti pergerakan akar."
+                ],
+                a: 1
+            },
+            {
+                q: "Peneliti menemukan bahwa cangkang siput laut semakin tipis dari tahun ke tahun. Setelah dievaluasi, hal ini berkaitan dengan komponen abiotik. Analisis faktor penyebab paling logis dari fenomena ini!",
+                o: [
+                    "Peningkatan suhu air laut yang membuat siput berkeringat lebih banyak.",
+                    "Banyaknya predator yang gemar memakan cangkang tebal sehingga siput beradaptasi menipiskannya.",
+                    "Peningkatan kadar karbon dioksida yang menyebabkan laut menjadi lebih asam dan melarutkan kalsium cangkang.",
+                    "Berkurangnya cahaya matahari ke dasar laut sehingga siput kekurangan vitamin D."
+                ],
+                a: 2
+            },
+            {
+                q: "Di sebuah padang pasir buatan, pengelola menambahkan banyak ular untuk mengendalikan tikus. Namun, ular tersebut mati kepanasan. Evaluasi kesalahan utama dari tindakan pengelola tersebut!",
+                o: [
+                    "Tikus gurun bergerak terlalu cepat sehingga ular kelelahan dan mati kelaparan.",
+                    "Ular tidak disediakan tempat bernaung seperti bebatuan (komponen abiotik) untuk meregulasi suhu tubuhnya.",
+                    "Tikus di padang pasir memiliki racun alami yang membunuh ular pemangsanya.",
+                    "Ular membutuhkan genangan air yang besar, sedangkan padang pasir tidak memilikinya."
+                ],
+                a: 1
+            },
+            {
+                q: "Jika kita membandingkan ekosistem tundra (kutub) dan hutan hujan tropis, faktor abiotik mana yang secara evaluatif paling membatasi keanekaragaman produsen di tundra?",
+                o: [
+                    "Kandungan oksigen di udara yang sangat tipis.",
+                    "Tingginya kelembapan udara yang memicu pembusukan.",
+                    "Suhu ekstrem dan lapisan permafrost (tanah beku) yang menghalangi pertumbuhan akar.",
+                    "Adanya hewan herbivora raksasa yang rakus memakan semua tumbuhan."
+                ],
+                a: 2
+            },
+            {
+                q: "Sebuah pabrik membuang limbah air hangat ke sungai. Limbah tersebut tidak beracun, hanya bersuhu tinggi. Evaluasi dampak perubahan satu komponen abiotik (suhu) ini terhadap ekosistem sungai!",
+                o: [
+                    "Positif, karena air hangat mempercepat perkembangbiakan semua jenis ikan.",
+                    "Negatif, karena peningkatan suhu menurunkan kadar oksigen terlarut yang bisa membuat biota air mati lemas.",
+                    "Netral, karena air sungai yang mengalir akan segera menetralkan suhu kembali normal seketika.",
+                    "Positif, mematikan semua bakteri pembusuk sehingga air sungai menjadi sangat steril."
+                ],
+                a: 1
+            },
+            {
+                q: "Dalam merancang terarium (ekosistem tertutup dalam kaca), Doni memasukkan tumbuhan, tanah, dan air lalu menutupnya rapat. Setelah dievaluasi seminggu, embun selalu terbentuk di pagi hari. Apa kesimpulan dari fenomena ini?",
+                o: [
+                    "Udara dari luar masih bisa masuk melalui celah kaca yang tidak rapat.",
+                    "Terjadi siklus air buatan melalui proses transpirasi tumbuhan dan kondensasi pada suhu yang lebih dingin.",
+                    "Tanah di dalam terarium menghasilkan air secara mandiri tanpa proses biologi.",
+                    "Tumbuhan menangis karena kekurangan oksigen di dalam wadah tertutup."
+                ],
+                a: 1
+            },
+            {
+                q: "Budi berpendapat bahwa angin tidak memiliki peran penting bagi produsen di ekosistem darat. Evaluasilah kebenaran pendapat Budi beserta alasannya!",
+                o: [
+                    "Benar, angin hanya berfungsi menyegarkan udara bagi herbivora.",
+                    "Salah, angin sangat penting membantu proses penyerbukan dan penyebaran biji pada banyak spesies tanaman.",
+                    "Benar, angin justru merusak tanaman dengan cara mematahkan ranting-rantingnya.",
+                    "Salah, angin berfungsi membawa tanah-tanah baru yang subur dari pegunungan ke dataran rendah."
+                ],
+                a: 1
+            },
+            {
+                q: "Pemerintah membangun bendungan besar memotong aliran sungai. Menilai dampaknya pada ekosistem muara (pertemuan sungai dan laut) di hilir, hal apa yang paling kritis terjadi?",
+                o: [
+                    "Ekosistem muara akan menjadi air tawar murni karena air laut terblokir bendungan.",
+                    "Pasokan sedimen dan nutrisi dari hulu berkurang, mengancam kehidupan mangrove dan biota muara.",
+                    "Muara akan menjadi lebih dalam dan jernih sehingga ikan karang bisa hidup di sana.",
+                    "Tidak ada dampak karena ekosistem muara bisa mandiri memenuhi kebutuhan nutrisinya dari laut."
+                ],
+                a: 1
+            },
+            {
+                q: "Pencahayaan lampu jalan 24 jam di sekitar taman kota dilaporkan mengganggu ekosistem. Evaluasi komponen biotik mana yang paling terdampak langsung oleh perubahan kondisi abiotik (cahaya) ini!",
+                o: [
+                    "Burung nokturnal (aktif malam) kehilangan jam biologisnya untuk berburu mangsa.",
+                    "Pohon-pohon besar menjadi kerdil karena terlalu banyak berfotosintesis.",
+                    "Cacing tanah akan naik ke permukaan pada malam hari dan kepanasan oleh lampu.",
+                    "Bakteri tanah akan bermutasi menyerap cahaya lampu sebagai sumber energi alternatif."
+                ],
+                a: 0
+            },
+            {
+                q: "Saat gunung berapi meletus, abu vulkanik menutupi hutan di sekitarnya. Jika dinilai secara jangka panjang (puluhan tahun), bagaimana abu vulkanik abiotik ini memengaruhi komponen biotik?",
+                o: [
+                    "Menghancurkan ekosistem secara permanen menjadi gurun abu mati.",
+                    "Abu akan berubah menjadi bebatuan beku yang membatasi pertumbuhan rumput selamanya.",
+                    "Abu vulkanik yang lapuk akan menjadi tanah yang sangat subur, mendukung regenerasi hutan yang lebih lebat.",
+                    "Hewan-hewan akan beradaptasi memakan abu vulkanik sebagai pengganti mineral garam."
+                ],
+                a: 2
+            },
+            {
+                q: "Seorang ahli biologi menanam dua tanaman sejenis di pot A (tanah liat) dan pot B (tanah berpasir). Keduanya diberi air sama banyak. Mengevaluasi sifat kedua tanah, prediksikan pot mana yang lebih berisiko membuat akar tanaman membusuk?",
+                o: [
+                    "Pot B, karena pasir mengandung banyak garam yang merusak akar.",
+                    "Pot A, karena tanah liat mengikat air sangat kuat menyebabkan drainase buruk dan kurangnya udara di akar.",
+                    "Keduanya sama berisiko karena jumlah air yang diberikan sama besar.",
+                    "Pot B, karena air akan terlalu cepat turun dan membawa racun dari udara ke akar."
+                ],
+                a: 1
+            },
+            {
+                q: "Hutan pinus seringkali memiliki tanah yang sangat sedikit ditumbuhi tanaman bawah (semak/rumput). Evaluasilah hubungan abiotik dan biotik yang paling tepat menjelaskan kondisi ini!",
+                o: [
+                    "Akar pinus mengeluarkan racun yang membunuh semua dekomposer di tanah.",
+                    "Daun pinus yang jatuh sangat asam (mengubah pH tanah) dan tajuk pinus menghalangi sinar matahari.",
+                    "Pinus menyerap 100% air tanah sehingga tumbuhan lain mati kekeringan.",
+                    "Hewan pengerat di hutan pinus memakan seluruh biji-bijian tanaman bawah yang jatuh."
+                ],
+                a: 1
+            },
+
+            // SUB-TEMA 2: HUBUNGAN ANTARKOMPONEN DALAM EKOSISTEM (Rantai/Jaring Makanan, Simbiosis) 21-40
+            {
+                q: "Dalam rantai makanan: Padi -> Belalang -> Katak -> Ular -> Elang. Petani membasmi katak secara masif. Evaluasilah dampak berantai yang paling logis terhadap jaring-jaring makanan tersebut!",
+                o: [
+                    "Ular dan elang meningkat jumlahnya, padi gagal panen.",
+                    "Belalang merajalela menghabiskan padi, populasi ular menurun kelaparan.",
+                    "Padi tumbuh subur karena tidak diinjak katak, ular beradaptasi makan belalang.",
+                    "Elang akan turun memakan belalang karena ular punah."
+                ],
+                a: 1
+            },
+            {
+                q: "Spesies burung A dan B memakan jenis serangga yang sama di satu pohon. Evaluasi tindakan adaptasi apa yang paling baik untuk mengurangi kompetisi agar keduanya tetap lestari!",
+                o: [
+                    "Keduanya berevolusi menjadi karnivora yang saling memangsa satu sama lain.",
+                    "Burung A mencari makan di bagian tajuk atas pohon, burung B di bagian dahan bawah.",
+                    "Burung B berhenti makan serangga dan beralih makan daun beracun pada pohon tersebut.",
+                    "Burung A mengundang predator untuk memangsa burung B agar serangga utuh untuknya."
+                ],
+                a: 1
+            },
+            {
+                q: "Ikan hiu dan ikan remora memiliki simbiosis komensalisme. Jika ikan remora dievaluasi dan ternyata sering memakan parasit kecil di kulit hiu, maka validasi ulang status simbiosis mereka yang paling tepat adalah...",
+                o: [
+                    "Tetap komensalisme, karena parasit tidak berpengaruh signifikan pada hiu raksasa.",
+                    "Berubah menjadi parasitisme, karena remora mencuri makanan dari kulit hiu.",
+                    "Berubah menjadi mutualisme, karena remora mendapat makanan dan hiu terbebas dari parasit.",
+                    "Berubah menjadi amensalisme, karena hiu terganggu oleh gerakan remora."
+                ],
+                a: 2
+            },
+            {
+                q: "Di sebuah taman nasional, populasi serigala (predator puncak) sengaja direintroduksi (dimasukkan kembali). Evaluasi dampak kehadiran predator puncak ini terhadap morfologi aliran sungai yang dihuni rusa berbisa ekologis!",
+                o: [
+                    "Sungai mengering karena serigala minum air dalam jumlah besar.",
+                    "Sungai rusak akibat rusa panik berhamburan merusak bantaran sungai saat dikejar serigala.",
+                    "Vegetasi bantaran sungai pulih karena rusa tidak lagi menetap diam merumput di situ, sehingga erosi sungai berkurang.",
+                    "Tidak ada kaitan sama sekali antara predator puncak darat dengan aliran sungai abiotik."
+                ],
+                a: 2
+            },
+            {
+                q: "Anggrek menempel pada pohon mangga. Pak Budi ingin mencabut semua anggrek karena takut pohon mangganya mati. Kritiklah alasan Pak Budi berdasarkan konsep simbiosis!",
+                o: [
+                    "Tindakan Budi benar karena akar anggrek masuk ke xilem mangga menghisap sari makanan.",
+                    "Tindakan Budi keliru, anggrek hanya menumpang tempat (epifit) dan membuat makanan sendiri, tidak merugikan mangga.",
+                    "Tindakan Budi benar karena daun anggrek menutupi seluruh daun mangga melakukan fotosintesis.",
+                    "Tindakan Budi keliru, karena anggrek memberikan nutrisi gula dari fotosintesisnya kepada mangga."
+                ],
+                a: 1
+            },
+            {
+                q: "Jaring-jaring makanan yang lebih kompleks dengan banyak spesies sering dianggap lebih stabil. Evaluasi argumen mana yang paling logis membenarkan pernyataan tersebut!",
+                o: [
+                    "Lebih banyak hewan berarti kotoran yang dihasilkan untuk pupuk semakin melimpah ruah.",
+                    "Kehilangan satu spesies mangsa tidak menyebabkan kelaparan karena predator memiliki banyak jalur alternatif mangsa.",
+                    "Semakin banyak spesies, kompetisi semakin menurun karena mereka akan saling berbagi makanan secara sadar.",
+                    "Predator puncak akan menjadi herbivora jika mangsanya terlalu banyak dan membingungkan."
+                ],
+                a: 1
+            },
+            {
+                q: "Hubungan antara jamur penicillium dan bakteri sering dikategorikan antibiosis (amensalisme). Evaluasi potensi pemanfaatan interaksi ekosistem ini untuk kehidupan manusia!",
+                o: [
+                    "Dimanfaatkan sebagai probiotik untuk memperbanyak bakteri baik di usus manusia.",
+                    "Digunakan sebagai racun pembasmi hama tikus di ladang gandum.",
+                    "Dikembangkan menjadi antibiotik (penisilin) untuk menghambat pertumbuhan bakteri penyebab penyakit pada manusia.",
+                    "Dijadikan pupuk hayati agar jamur merusak akar gulma pengganggu."
+                ],
+                a: 2
+            },
+            {
+                q: "Bunga bangkai mengeluarkan bau busuk. Evaluasilah fungsi utama dari bentuk adaptasi interaksi ini dalam ekosistem hutannya!",
+                o: [
+                    "Mencegah hewan herbivora mendekat dan memakan kelopaknya yang rapuh.",
+                    "Mematikan tumbuhan di sekitarnya karena bau busuk mengandung gas beracun.",
+                    "Menarik lalat dan kumbang bangkai untuk datang membantu proses penyerbukan.",
+                    "Memberikan tanda bagi predator bahwa ada mangsa mati di dekat bunga tersebut."
+                ],
+                a: 2
+            },
+            {
+                q: "Dalam aliran energi, konsumen tingkat III hanya mendapatkan sebagian kecil energi dari produsen. Berdasarkan evaluasi hukum termodinamika di ekosistem, mengapa jumlah energi semakin menyusut?",
+                o: [
+                    "Energi tersebut disembunyikan oleh hewan sebagai lemak cadangan yang tidak bisa dimakan predator.",
+                    "Konsumen tingkat III terlalu malas untuk makan banyak sehingga energi yang masuk sedikit.",
+                    "Sebagian besar energi terlepas dalam bentuk panas akibat proses respirasi dan aktivitas bergerak di tiap tingkatan.",
+                    "Dekomposer mencuri energi langsung dari tumbuhan sebelum sampai ke karnivora puncak."
+                ],
+                a: 2
+            },
+            {
+                q: "Tanaman polong-polongan bersimbiosis dengan bakteri Rhizobium. Jika petani terus-menerus menanam polong-polongan dan menambahkan pupuk nitrogen kimia berdosis tinggi, evaluasi dampak terhadap bakteri tersebut!",
+                o: [
+                    "Bakteri akan bermutasi menjadi parasit yang menyerang daun tanaman.",
+                    "Bakteri Rhizobium akan tumbuh raksasa dan mematikan tanaman inang.",
+                    "Kebutuhan simbiosis berkurang, bintil akar tidak terbentuk, dan bakteri alami di tanah perlahan mati/tidak aktif.",
+                    "Bakteri akan membantu tanaman mengubah pupuk kimia menjadi emas."
+                ],
+                a: 2
+            },
+            {
+                q: "Spesies invasif (asing) yaitu ikan toman dilepaskan secara ilegal ke sebuah danau yang hanya berisi ikan nila dan mujair kecil. Nilai kemungkinan terbesar yang memengaruhi jaring makanan danau tersebut!",
+                o: [
+                    "Ikan nila dan mujair akan berkolaborasi mengusir ikan toman dari danau.",
+                    "Ikan toman akan beradaptasi makan lumut karena tidak terbiasa makan ikan mujair.",
+                    "Ikan nila endemik punah karena ikan toman tidak memiliki predator alami di danau tersebut dan memangsa dengan agresif.",
+                    "Danau menjadi lebih seimbang karena kehadiran toman menambah keanekaragaman karnivora."
+                ],
+                a: 2
+            },
+            {
+                q: "Ada sebuah jaring makanan yang sangat bergantung pada spesies kunci (keystone species) yaitu Berang-berang. Evaluasilah apa yang terjadi jika Berang-berang diburu hingga habis!",
+                o: [
+                    "Aliran sungai tidak terbendung, habitat lahan basah hilang, dan banyak spesies ikan serta burung air punah.",
+                    "Pohon-pohon di hutan akan tumbuh tanpa kendali menyerap semua air sungai hingga kering.",
+                    "Ekosistem tidak terpengaruh, ikan-ikan akan membangun bendungannya sendiri dari batu.",
+                    "Populasi serigala meningkat karena kehilangan pesaing utama dalam mencari ikan."
+                ],
+                a: 0
+            },
+            {
+                q: "Kupu-kupu raja meletakkan telur di daun milkweed yang mengandung racun toksin. Ulatnya menyerap racun itu tanpa mati. Evaluasilah keuntungan interaksi ini bagi kupu-kupu dari perspektif pertahanan ekologis!",
+                o: [
+                    "Ulat tumbuh lebih cepat karena racun mempercepat pembelahan sel.",
+                    "Kupu-kupu dewasa menjadi beracun atau tidak enak dimakan oleh burung predator.",
+                    "Kupu-kupu dapat meracuni serangga pesaing yang hinggap di bunga yang sama.",
+                    "Racun milkweed mengubah warna kupu-kupu menjadi transparan sehingga sulit dilihat."
+                ],
+                a: 1
+            },
+            {
+                q: "Cacing pita hidup di usus manusia (parasitisme). Namun manusia yang terinfeksi sering tidak langsung mati, melainkan perlahan menjadi kurus dan lemah. Mengapa parasit berevolusi tidak membunuh inangnya seketika?",
+                o: [
+                    "Cacing pita memiliki rasa kasihan terhadap inangnya.",
+                    "Membunuh inang seketika berarti parasit tersebut juga akan mati karena kehilangan sumber makanan utamanya.",
+                    "Sistem imun manusia selalu berhasil menawar 99% racun yang dikeluarkan cacing.",
+                    "Cacing pita membutuhkan waktu lama untuk menyerap energi listrik dari saraf perut manusia."
+                ],
+                a: 1
+            },
+            {
+                q: "Di padang savana, burung jalak sering bertengger di punggung kerbau liar. Pakar ekologi mengevaluasi interaksi ini sangat rapuh jika musim kemarau panjang terjadi. Alasan logis yang mendukung evaluasi tersebut adalah...",
+                o: [
+                    "Kerbau marah karena kepanasan dan menendang burung jalak pergi.",
+                    "Kerbau kekurangan rumput menjadi kurus, kutu kulit (makanan jalak) mati kepanasan, burung kehilangan sumber pangan mutlak.",
+                    "Burung jalak menjadi buta warna karena pantulan matahari di padang savana yang kering.",
+                    "Kerbau berendam di air terus-menerus dan burung jalak tidak bisa berenang."
+                ],
+                a: 1
+            },
+            {
+                q: "Dua spesies singa jantan bertarung untuk memperebutkan wilayah berburu dan kawanan betina. Evaluasi jenis interaksi ini dan tentukan perannya dalam menjaga kestabilan populasi di ekosistem savana!",
+                o: [
+                    "Interaksi predasi; membantu mengontrol jumlah singa jantan agar tidak lebih banyak dari betina.",
+                    "Interaksi kompetisi intraspesifik; memastikan bahwa gen terbaik dan terkuat yang akan diturunkan pada generasi berikutnya.",
+                    "Interaksi mutualisme; keduanya menjadi lebih kuat setelah bertarung untuk melawan serigala.",
+                    "Interaksi netralisme; karena yang kalah akan mencari mangsa herbivora di lautan."
+                ],
+                a: 1
+            },
+            {
+                q: "Fitoplankton -> Zooplankton -> Ikan Teri -> Ikan Tuna. Terjadi tumpahan minyak yang memblokir sinar matahari ke dalam laut. Evaluasilah trofik mana yang pertama kali musnah dan akibat langsungnya!",
+                o: [
+                    "Ikan Tuna, karena tidak bisa melihat mangsanya di dalam air yang gelap.",
+                    "Ikan Teri, karena minyak menempel pada insang mereka langsung mati lemas.",
+                    "Fitoplankton, tidak bisa berfotosintesis menyebabkan kolapsnya seluruh rantai makanan di atasnya.",
+                    "Zooplankton, karena mereka keracunan meminum minyak mentah dari tumpahan."
+                ],
+                a: 2
+            },
+            {
+                q: "Banyak orang menanam tanaman refugia (bunga-bungaan) di tepi sawah. Evaluasilah efektivitas taktik ini berdasarkan interaksi jaring-jaring makanan dalam ekosistem persawahan!",
+                o: [
+                    "Kurang efektif, karena bunga merebut nutrisi air dari padi dan membuat tanah kering.",
+                    "Sangat efektif, bunga mengundang serangga predator alami (musuh alami hama) yang akan memangsa hama wereng di sawah.",
+                    "Sangat efektif, bunga menghasilkan racun yang mematikan bagi ular sawah.",
+                    "Kurang efektif, bunga akan mengundang kawanan burung pemakan biji yang justru akan memakan padi."
+                ],
+                a: 1
+            },
+            {
+                q: "Suatu pulau karang hanya dihuni oleh burung elang dan ular, ular makan tikus, tikus memakan telur burung laut yang bersarang di tanah. Apa keputusan terbaik untuk menyelamatkan burung laut endemik dari kepunahan?",
+                o: [
+                    "Membunuh semua ular agar tikus dimakan elang saja.",
+                    "Menangkap tikus dan membawanya keluar pulau karena tikus adalah predator langsung telur burung laut.",
+                    "Memasukkan harimau untuk menakut-nakuti tikus.",
+                    "Memberi pakan biji-bijian pada tikus setiap hari agar tidak makan telur."
+                ],
+                a: 1
+            },
+            {
+                q: "Sebuah ekosistem hutan terbakar sebagian. Tanaman pionir (perintis) mulai tumbuh pertama kali di tanah sisa abu. Nilailah fungsi interaksi tanaman pionir ini bagi kelanjutan suksesi ekosistem!",
+                o: [
+                    "Mencegah pohon besar tumbuh agar sinar matahari tetap panas.",
+                    "Memperlambat pemulihan hutan karena menyerap semua sisa mineral abu.",
+                    "Mengundang burung pemakan biji untuk datang membawa biji pohon besar dan memperbaiki struktur kesuburan tanah perlahan.",
+                    "Tanaman pionir akan berevolusi menjadi pohon besar dalam waktu 2 tahun berkat abu vulkanik."
+                ],
+                a: 2
+            },
+
+            // SUB-TEMA 3: KESEIMBANGAN EKOSISTEM (Dampak Manusia, Bencana Alam, Pelestarian) 41-60
+            {
+                q: "Pemerintah berencana membuka lahan perkebunan sawit raksasa dengan membakar hutan gambut. Evaluasi dampak jangka panjang tindakan ini terhadap siklus karbon global!",
+                o: [
+                    "Penurunan suhu global karena asap menghalangi radiasi matahari secara permanen.",
+                    "Keseimbangan tercapai karena kelapa sawit mampu menyerap karbon jauh lebih banyak dari pohon hutan asli.",
+                    "Pelepasan emisi karbon dioksida purba yang tersimpan di gambut, memperparah pemanasan global.",
+                    "Tidak ada dampak global, hanya berdampak pada polusi udara lokal selama seminggu."
+                ],
+                a: 2
+            },
+            {
+                q: "Nelayan di daerah X beralih menggunakan pukat harimau (jaring dasar bervolume besar) karena hasil tangkapan pancing menurun. Kritiklah keputusan nelayan tersebut dilihat dari keseimbangan ekosistem laut karang!",
+                o: [
+                    "Tindakan tersebut jenius karena menghemat waktu dan bahan bakar kapal.",
+                    "Tindakan merugikan karena pukat menghancurkan terumbu karang yang merupakan habitat dan tempat kawin ikan.",
+                    "Tindakan tersebut benar agar ikan-ikan tua segera tertangkap dan tergantikan ikan muda.",
+                    "Tindakan netral selama mereka membuang kembali sampah plastik yang ikut terjaring."
+                ],
+                a: 1
+            },
+            {
+                q: "Untuk mengatasi hama tikus, warga desa mengadakan perburuan ular sanca besar-besaran untuk dijual kulitnya. Evaluasilah kaitan sebab-akibat yang memecah keseimbangan ekosistem di desa tersebut!",
+                o: [
+                    "Tikus semakin banyak karena warga tidak sempat berburu tikus akibat sibuk mencari ular.",
+                    "Populasi tikus meledak tak terkendali (gagal panen) karena ular sanca sebagai pengendali alami hama musnah.",
+                    "Burung hantu akan mati kelaparan karena ular sanca adalah mangsa utamanya.",
+                    "Lingkungan menjadi bersih dan aman bagi anak-anak bermain di sawah tanpa takut ular."
+                ],
+                a: 1
+            },
+            {
+                q: "Sebuah pabrik tekstil mengklaim bahwa limbah pewarna yang dibuang ke sungai sudah 'aman' karena tidak membunuh ikan secara langsung. Evaluasilah kebenaran klaim ini jika air sungai berubah menjadi sangat keruh dan pekat!",
+                o: [
+                    "Klaim salah, warna pekat menghalangi cahaya matahari sehingga produsen air tidak bisa fotosintesis, rantai makanan putus lambat laun.",
+                    "Klaim benar, ikan bisa bersembunyi dari predator karena air keruh.",
+                    "Klaim salah, warna tekstil menempel di sisik ikan membuatnya diburu karena warnanya cantik.",
+                    "Klaim benar, karena ikan bernapas dengan insang, bukan mata, sehingga kekeruhan tidak berpengaruh."
+                ],
+                a: 0
+            },
+            {
+                q: "Sebuah program reboisasi di lahan kritis dilakukan dengan menanam SATU jenis pohon ekaliptus secara massal (monokultur). Nilailah kerentanan hutan buatan ini terhadap gangguan alam!",
+                o: [
+                    "Sangat kuat menahan angin topan karena semua akar seragam saling mengikat erat.",
+                    "Sangat rentan hancur total jika terserang satu penyakit spesifik atau hama ekaliptus, karena tidak ada keragaman ketahanan.",
+                    "Keseimbangan tercapai lebih cepat karena hewan herbivora lebih menyukai satu jenis daun yang rasanya konsisten.",
+                    "Hutan menjadi tidak terlihat oleh satelit pemantau karena warna daun seragam."
+                ],
+                a: 1
+            },
+            {
+                q: "Masyarakat pesisir membangun tanggul beton setinggi 5 meter memotong kawasan hutan mangrove untuk mencegah abrasi. Evaluasi efektivitas ekologis dari tanggul beton dibanding mempertahankan mangrove!",
+                o: [
+                    "Beton lebih kuat dan permanen, namun memutus habitat biota kepiting dan ikan muda yang justru melemahkan rantai makanan pesisir.",
+                    "Beton dan mangrove memiliki fungsi ekologis 100% sama sehingga pergantian ini dibenarkan secara biologi.",
+                    "Mangrove mengundang nyamuk malaria, sehingga tanggul beton menyeimbangkan kesehatan manusia dan abrasi.",
+                    "Tanggul beton akan menghasilkan garam alami yang menguntungkan tambak warga di baliknya."
+                ],
+                a: 0
+            },
+            {
+                q: "Penggunaan pestisida (DDT) di masa lalu terbukti terakumulasi dalam jaringan lemak makhluk hidup. Jika elang sebagai konsumen puncak memakan puluhan ular yang terkontaminasi, evaluasilah dampak akhirnya pada populasi elang!",
+                o: [
+                    "Elang beradaptasi menjadi kebal dan bulunya berubah warna menjadi lebih gelap.",
+                    "Terjadi biomagnifikasi; racun menumpuk drastis pada tubuh elang menyebabkan cangkang telur tipis dan gagal menetas (populasi menurun).",
+                    "Elang beralih memakan biji-bijian karena insting menolak daging beracun.",
+                    "Elang akan memuntahkan kembali racun DDT tersebut melalui saluran pernapasannya."
+                ],
+                a: 1
+            },
+            {
+                q: "Keseimbangan dinamis ekosistem berarti alam selalu mencari titik stabil meskipun ada fluktuasi. Jika musim hujan tiba-tiba memendek 2 bulan dalam setahun secara konsisten (perubahan iklim), prediksikan adaptasi ekosistem yang paling rasional!",
+                o: [
+                    "Spesies amfibi akan mendominasi dan mamalia berbulu tebal akan berevolusi menjadi reptil.",
+                    "Terjadi pergeseran komposisi flora ke arah tumbuhan tahan kering (sukulen) dan fauna yang mampu dormansi, mengubah tipe bioma.",
+                    "Alam akan menciptakan mata air raksasa untuk mengimbangi kurangnya curah hujan dari langit.",
+                    "Keseimbangan tidak mungkin tercapai dan seluruh planet akan kiamat dalam 5 tahun."
+                ],
+                a: 1
+            },
+            {
+                q: "Daerah tangkapan air pegunungan yang dulunya hutan lebat diubah menjadi kawasan villa mewah dan perkebunan sayur berundak. Nilailah korelasi perubahan ini dengan bencana banjir lumpur bandang di kota hilir!",
+                o: [
+                    "Villa mewah menyerap air ke kolam renang mereka, sehingga banjir diakibatkan oleh kebocoran pipa kota hilir sendiri.",
+                    "Hilangnya akar pohon dalam hutan menghilangkan fungsi hidrologis penahan laju air hujan, tanah sayuran mudah tergerus menjadi lumpur bandang.",
+                    "Banjir lumpur disebabkan oleh warga kota yang membuang sampah sembarangan di selokan, tidak ada hubungannya dengan villa hulu.",
+                    "Sayuran membutuhkan banyak air sehingga mereka membuang kelebihan airnya ke sungai menyebabkan banjir."
+                ],
+                a: 1
+            },
+            {
+                q: "Untuk menjaga kawasan taman nasional laut, petugas melarang warga memancing meskipun jumlah ikan kelihatannya sangat melimpah. Apa alasan evaluatif konservasi paling mendasar dari larangan ketat ini?",
+                o: [
+                    "Menghukum nelayan lokal agar bekerja di bidang pariwisata saja.",
+                    "Taman nasional tersebut adalah 'zona inti/bank benih' tempat biota memijah (bertelur) tanpa stres, lalu telurnya menyebar ke perairan lain (spillover effect).",
+                    "Pemerintah ingin menangkap semua ikan itu sendiri secara diam-diam di malam hari.",
+                    "Ikan di taman laut beracun karena memakan terumbu karang yang sudah mati."
+                ],
+                a: 1
+            },
+            {
+                q: "Dalam sistem tumpang sari (menanam jagung, kedelai, dan kacang tanah di lahan yang sama), petani berhasil menekan serangan penyakit. Evaluasilah prinsip ekosistem alami apa yang ditiru oleh metode pertanian ini!",
+                o: [
+                    "Prinsip rantai makanan panjang dengan menambahkan herbivora besar di lahan.",
+                    "Prinsip suksesi primer yang memulai kehidupan dari batuan kosong.",
+                    "Prinsip keanekaragaman hayati yang menciptakan hambatan bagi penyebaran spesifik satu jenis hama/patogen.",
+                    "Prinsip kompetisi intraspesifik agar tanaman saling membunuh."
+                ],
+                a: 2
+            },
+            {
+                q: "Sebuah program donasi melepaskan puluhan orangutan ke dalam hutan kecil yang sudah padat satwa primata lain. Mengevaluasi kapasitas daya dukung (carrying capacity) hutan tersebut, apa bahaya logis yang mengancam?",
+                o: [
+                    "Orangutan akan bergotong-royong membangun sarang apartemen tingkat tiga dari bambu.",
+                    "Hutan kecil terlalu sempit sehingga terjadi kompetisi sengit memperebutkan buah-buahan, memicu kelaparan fatal bagi banyak primata.",
+                    "Spesies primata lain akan dengan senang hati menyerahkan wilayahnya dan pindah ke pemukiman manusia.",
+                    "Tumbuhan di hutan akan berbuah dua kali lipat lebih cepat karena merasa banyak hewan yang butuh makan."
+                ],
+                a: 1
+            },
+            {
+                q: "Ali melihat banyak eceng gondok di rawa dan mengusulkan penyemprotan herbisida pembunuh tanaman air untuk membersihkannya secara instan. Kritik kelemahan fatal usulan Ali bagi keseimbangan rawa!",
+                o: [
+                    "Herbisida terlalu mahal, lebih baik membakar eceng gondok di atas air rawa.",
+                    "Eceng gondok mati dan membusuk serentak di dasar rawa, proses pembusukan menguras habis oksigen, memicu kematian massal ikan (anoksia).",
+                    "Rawa akan menjadi terlalu terang terkena matahari sehingga ikan menjadi buta.",
+                    "Akar eceng gondok yang mati akan berubah menjadi ular rawa buatan."
+                ],
+                a: 1
+            },
+            {
+                q: "Banyak peternak sapi membiarkan kotoran hewan menumpuk masuk ke sungai. Kandungan nitrat kotoran menyuburkan sungai (eutrofikasi). Evaluasilah paradoks mengapa sungai yang 'subur' justru mematikan ekosistemnya!",
+                o: [
+                    "Subur berarti ganggang meledak (algae bloom) menutup permukaan air, memblokir cahaya, ganggang mati membusuk dan menghabiskan oksigen air.",
+                    "Air menjadi sangat jernih sehingga predator dari udara (elang ikan) memakan habis semua kehidupan air.",
+                    "Sapi akan ikut meminum air subur tersebut lalu meledak perutnya.",
+                    "Ikan tumbuh terlalu besar dengan cepat dan kehabisan ruang gerak di dalam sungai."
+                ],
+                a: 0
+            },
+            {
+                q: "Untuk melestarikan harimau Sumatera, dibuat koridor satwa (jembatan/hutan penyambung) melintasi jalan tol yang membelah hutan. Evaluasi alasan krusial perlunya koridor lintasan alami ini!",
+                o: [
+                    "Agar harimau tidak merusak aspal jalan tol dengan cakar mereka yang tajam.",
+                    "Mencegah harimau kepanasan saat berjalan mencari mangsa di siang hari.",
+                    "Menghubungkan populasi yang terisolasi untuk mencegah kepunahan akibat perkawinan sedarah (inbreeding) dan memperluas wilayah buruan.",
+                    "Memberikan spot foto bagi wisatawan jalan tol agar ekonomi wisata meningkat."
+                ],
+                a: 2
+            },
+            {
+                q: "Ada sekelompok aktivis menentang keras pembangunan pembangkit listrik tenaga angin darat (kincir angin raksasa) di jalur migrasi burung antar benua. Manakah argumen evaluatif terkuat dari aktivis ini?",
+                o: [
+                    "Kincir angin akan menyerap angin sehingga burung tidak bisa terbang gliding.",
+                    "Suara kincir membuat burung tuli sehingga mereka tidak bisa mendengar panggilan kawin.",
+                    "Rotasi bilah kincir raksasa berada di lintasan terbang berisiko tinggi membantai ribuan burung migran langka tanpa sengaja.",
+                    "Kincir angin terlalu terang memantulkan matahari ke mata burung."
+                ],
+                a: 2
+            },
+            {
+                q: "Konsep Ekonomi Sirkular meniru siklus materi di alam, di mana tidak ada sampah yang terbuang (Zero Waste). Evaluasi produk buatan manusia di bawah ini yang paling gagal meniru alam dan merusak keseimbangan!",
+                o: [
+                    "Pupuk kompos organik dari sisa daun sayuran dapur.",
+                    "Kantong kresek plastik polimer (sekali pakai) yang tidak dikenali enzim dekomposer bakteri manapun di bumi.",
+                    "Kertas kardus kemasan paket berbahan serat selulosa pohon yang dapat hancur dalam 3 bulan di tanah lembab.",
+                    "Pakaian dari benang katun murni yang dapat terurai oleh jamur perusak tekstil."
+                ],
+                a: 1
+            },
+            {
+                q: "Terjadi perdebatan: Grup A ingin membiarkan kebakaran hutan alami parsial padam sendiri, Grup B ingin memadamkan sedini mungkin. Evaluasi justifikasi ilmiah Grup A yang membenarkan api sesekali diperlukan di beberapa bioma hutan!",
+                o: [
+                    "Api menghancurkan seluruh predator sehingga hewan herbivora bisa hidup damai selamanya.",
+                    "Abu kebakaran mengubah tanah menjadi kaca yang indah untuk pertambangan silika.",
+                    "Api memusnahkan penumpukan semak kering yang rawan memicu kebakaran ekstrem masa depan, dan beberapa biji pohon justru butuh panas api untuk berkecambah.",
+                    "Grup A hanya tidak ingin mengeluarkan biaya sewa helikopter pemadam."
+                ],
+                a: 2
+            },
+            {
+                q: "Pemerintah membuat UU pelarangan perdagangan sisik Trenggiling. Trenggiling memakan jutaan semut dan rayap per tahun. Evaluasilah skenario terburuk bagi manusia jika UU ini gagal dan trenggiling punah!",
+                o: [
+                    "Manusia kehilangan bahan baku pembuatan obat sisik tradisional palsu.",
+                    "Hutan menjadi tidak berisik karena tidak ada trenggiling yang menggaruk pohon.",
+                    "Ledakan populasi rayap yang luar biasa, menyebabkan kerusakan struktural masif pada bangunan kayu dan perkebunan warga.",
+                    "Semut akan berevolusi menjadi raksasa karena hilangnya musuh abadi."
+                ],
+                a: 2
+            },
+            {
+                q: "Kamu adalah ahli tata kota. Sebuah rawa di tengah kota ingin diurug untuk mall, tapi rawa itu adalah penyerap luapan sungai musim hujan. Keputusan evaluatif (win-win solution) mana yang berwawasan ekologi tinggi?",
+                o: [
+                    "Urug seluruhnya, buat saluran air beton yang besar menuju laut, mall dibangun 100%.",
+                    "Bangun mall melayang menggunakan pilar beton raksasa di atas rawa utuh, sehingga rawa tertutup bayangan permanen tapi air bisa lewat.",
+                    "Jadikan rawa tersebut Hutan Kota Terbuka Hijau terintegrasi embung (danau resapan) untuk rekreasi warga, tanpa membangun mall besar pengeras tanah.",
+                    "Kuras air rawa setiap musim kemarau, dan biarkan banjir masuk mall saat musim hujan sebagai wisata air."
+                ],
+                a: 2
+            }
+        ];
+
+        // Pengacakan array (Fisher-Yates) agar soal tidak monoton bagi user yang main berulang
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+        
+        let currentQuestionIndex = 0;
+        let scoreCount = 0;
+        let playerName = "";
+        let hasAnswered = false;
+
+        function startGame() {
+            const nameInput = document.getElementById('playerNameInput').value.trim();
+            if (nameInput === "") {
+                document.getElementById('name-error').classList.remove('hidden');
+                return;
+            }
+            playerName = nameInput;
+            document.getElementById('display-name').innerText = "Halo, " + playerName;
+            
+            // Inisialisasi game
+            shuffleArray(questions); // Acak urutan soal
+            currentQuestionIndex = 0;
+            scoreCount = 0;
+
+            document.getElementById('home-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('hidden');
+            document.getElementById('game-screen').classList.add('flex');
+            
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            hasAnswered = false;
+            document.getElementById('next-btn').classList.add('hidden');
+            
+            const q = questions[currentQuestionIndex];
+            document.getElementById('current-question-num').innerText = currentQuestionIndex + 1;
+            document.getElementById('question-text').innerText = q.q;
+
+            // Update Progress bar
+            const progress = ((currentQuestionIndex) / questions.length) * 100;
+            document.getElementById('progress-bar').style.width = `${progress}%`;
+
+            const optionsContainer = document.getElementById('options-container');
+            optionsContainer.innerHTML = "";
+
+            // Mapping opsi dengan huruf A, B, C, D
+            const labels = ["A", "B", "C", "D"];
+            
+            q.o.forEach((optionText, index) => {
+                const btn = document.createElement('button');
+                btn.className = "option-btn text-left p-4 rounded-xl border-2 border-emerald-100 bg-white hover:border-emerald-400 text-gray-700 font-medium w-full flex items-start gap-3 shadow-sm";
+                btn.onclick = () => selectOption(index, btn);
+                
+                btn.innerHTML = `
+                    <span class="bg-emerald-100 text-emerald-700 font-bold px-3 py-1 rounded-md shrink-0 border border-emerald-200 shadow-inner">${labels[index]}</span>
+                    <span class="leading-snug">${optionText}</span>
+                `;
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        function selectOption(selectedIndex, btnElement) {
+            if (hasAnswered) return; // Hanya bisa jawab 1 kali
+            hasAnswered = true;
+
+            const q = questions[currentQuestionIndex];
+            const isCorrect = (selectedIndex === q.a);
+            
+            if (isCorrect) scoreCount++;
+
+            // Visual feedback pada semua tombol
+            const allBtns = document.querySelectorAll('.option-btn');
+            allBtns.forEach((btn, i) => {
+                btn.disabled = true; // disable all
+                btn.classList.remove('hover:border-emerald-400', 'cursor-pointer');
+                btn.classList.add('cursor-not-allowed', 'opacity-70');
+                
+                const labelSpan = btn.querySelector('span:first-child');
+
+                if (i === q.a) {
+                    // Correct Answer visual
+                    btn.classList.replace('bg-white', 'bg-green-100');
+                    btn.classList.replace('border-emerald-100', 'border-green-500');
+                    btn.classList.remove('opacity-70'); // keep correct answer fully visible
+                    labelSpan.classList.replace('bg-emerald-100', 'bg-green-500');
+                    labelSpan.classList.replace('text-emerald-700', 'text-white');
+                    labelSpan.innerHTML += ` ✓`;
+                } else if (i === selectedIndex && !isCorrect) {
+                    // Wrong Answer visual
+                    btn.classList.replace('bg-white', 'bg-red-50');
+                    btn.classList.replace('border-emerald-100', 'border-red-400');
+                    btn.classList.add('border-2');
+                    labelSpan.classList.replace('bg-emerald-100', 'bg-red-500');
+                    labelSpan.classList.replace('text-emerald-700', 'text-white');
+                    labelSpan.innerHTML += ` ✗`;
+                }
+            });
+
+            // Show Next button
+            document.getElementById('next-btn').classList.remove('hidden');
+        }
+
+        function nextQuestion() {
+            if (currentQuestionIndex < questions.length - 1) {
+                currentQuestionIndex++;
+                loadQuestion();
+            } else {
+                showResult();
+            }
+        }
+
+        function showResult() {
+            document.getElementById('game-screen').classList.remove('flex');
+            document.getElementById('game-screen').classList.add('hidden');
+            
+            // Kalkulasi nilai max 100
+            const finalScore = Math.round((scoreCount / questions.length) * 100);
+            
+            // Menentukan predikat kelulusan HOTS C5
+            let predicate = "";
+            if(finalScore >= 90) predicate = "SANGAT BAIK (AHLI EKOLOGI)";
+            else if(finalScore >= 75) predicate = "BAIK (PENGAMAT ALAM)";
+            else if(finalScore >= 60) predicate = "CUKUP (PENJELAJAH)";
+            else predicate = "PERLU BELAJAR LAGI (PEMULA)";
+
+            document.getElementById('cert-name').innerText = playerName;
+            document.getElementById('cert-score').innerText = finalScore;
+            document.getElementById('cert-predicate').innerText = `PREDIKAT: ${predicate}`;
+            
+            // Set tanggal hari ini
+            const today = new Date();
+            const options = { year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('cert-date').innerText = today.toLocaleDateString('id-ID', options);
+
+            document.getElementById('result-screen').classList.remove('hidden');
+            document.getElementById('result-screen').classList.add('flex', 'flex-col', 'items-center', 'justify-center');
+        }
+    </script>
+</body>
+</html>
